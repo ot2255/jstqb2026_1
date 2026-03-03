@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>JSTQB CTFL 4.0 模擬試験（図なし40問）</title>
+<style>
+:root {
+  --bg:#0b0c10; --card:#111318; --ink:#e8eaed; --muted:#a7adb7; --line:#2a2f3a;
+  --good:#19c37d; --bad:#ff4d4f; --btn:#1f6feb;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Hiragino Sans","Yu Gothic",sans-serif;background:linear-gradient(180deg,#0b0c10,#0b0c10 30%,#07080b);color:var(--ink)}
+header{position:sticky;top:0;background:rgba(11,12,16,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);z-index:10}
+.wrap{max-width:980px;margin:0 auto;padding:14px 16px}
+h1{font-size:18px;margin:0}
+.small{color:var(--muted);font-size:12px;margin-top:6px;line-height:1.5}
+.controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;align-items:center}
+button{border:1px solid var(--line);background:#141824;color:var(--ink);padding:10px 12px;border-radius:10px;cursor:pointer}
+button.primary{background:var(--btn);border-color:transparent}
+button:disabled{opacity:.5;cursor:not-allowed}
+main{padding:18px 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 14px;margin:12px 0}
+.qhead{display:flex;gap:10px;align-items:baseline;justify-content:space-between;flex-wrap:wrap}
+.qnum{font-weight:700}
+.topic{color:var(--muted);font-size:12px}
+.stem{margin:10px 0 12px;line-height:1.7;white-space:pre-wrap}
+.opts{display:grid;gap:8px}
+.opt{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:10px;background:#0f121a}
+.opt input{margin-top:4px}
+.footerbar{position:sticky;bottom:0;background:rgba(11,12,16,.92);backdrop-filter:blur(10px);border-top:1px solid var(--line)}
+.summary{display:flex;gap:14px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.badge{font-size:12px;color:var(--muted)}
+.kpi{display:flex;gap:10px;flex-wrap:wrap}
+.kpi span{padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:#0f121a}
+.correct{border-color:rgba(25,195,125,.5);background:rgba(25,195,125,.07)}
+.wrong{border-color:rgba(255,77,79,.55);background:rgba(255,77,79,.08)}
+.explain{margin-top:10px;font-size:13px;color:var(--muted);line-height:1.6}
+hr{border:none;border-top:1px solid var(--line);margin:10px 0}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>JSTQB CTFL 4.0 模擬試験（図なし・40問／本番相当）</h1>
+    <div class="small">
+      ・4択／1問1正解／タイマーなし　・提出後に採点＆解説表示　・GitHub Pages（静的サイト）向け単一HTML構成
+    </div>
+    <div class="controls">
+      <button id="btnShuffle">問題をシャッフル</button>
+      <button id="btnReset">選択をリセット</button>
+      <button class="primary" id="btnSubmit">提出して採点</button>
+      <span class="badge" id="status">未提出</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="list"></div>
+</main>
+
+<div class="footerbar">
+  <div class="wrap summary">
+    <div class="kpi">
+      <span id="kAnswered">回答: 0/40</span>
+      <span id="kScore">得点: -</span>
+    </div>
+    <div class="badge">※提出後は正解と解説が表示されます（再提出は「選択をリセット」）。</div>
+  </div>
+</div>
+
+<script>
+const QUESTIONS = [{"id": 1, "topic": "テストの基礎", "stem": "テストの主な目的として最も適切なのはどれか。", "options": ["欠陥が存在しないことを証明する", "品質を保証する責任を持つ", "欠陥を検出し意思決定のための情報を提供する", "開発者の能力を評価する"], "answer": 2, "explain": "テストは欠陥の不在を証明せず、リスクと品質に関する情報提供と欠陥検出が目的。"}, {"id": 2, "topic": "テストの基礎", "stem": "『網羅的テストは不可能』の意味として最も適切なのはどれか。", "options": ["テストは不要である", "全ての入力や条件の組合せを試すことは現実的でない", "分岐カバレッジは100%にできない", "自動化すれば網羅可能である"], "answer": 1, "explain": "時間・コスト制約により全探索は非現実的。代表値・リスクに基づき選択する。"}, {"id": 3, "topic": "テストの基礎", "stem": "欠陥の偏在（defect clustering）の説明として最も適切なのはどれか。", "options": ["欠陥は均等に分布する", "少数のコンポーネントに欠陥が集中する傾向がある", "欠陥は常にテスト終盤に発見される", "欠陥はレビューでは見つからない"], "answer": 1, "explain": "欠陥は特定領域に集中しやすい。重点テストや追加レビューの根拠になる。"}, {"id": 4, "topic": "テストの基礎", "stem": "『早期テスト』の原則が狙う主な効果として最も適切なのはどれか。", "options": ["テスト工程を省略できる", "欠陥を早く発見し修正コストを下げる", "システムテストの工数を必ず半減できる", "テスト自動化が不要になる"], "answer": 1, "explain": "欠陥は後工程ほど修正コストが高い。早期の静的・動的活動が有効。"}, {"id": 5, "topic": "テストの基礎", "stem": "『バグゼロの誤謬』に最も近い主張はどれか。", "options": ["重大欠陥がないならリリースしてよい", "欠陥が見つからなければ品質が高い", "テストが品質を作り込む", "テストはリスク低減の一手段である"], "answer": 1, "explain": "欠陥が検出されない＝品質十分、は誤り。要求不一致や未テスト領域があり得る。"}, {"id": 6, "topic": "テストの基礎", "stem": "テスト活動を支援する作業成果物として最も適切なのはどれか。", "options": ["ソースコードのみ", "テスト計画、テストケース、テスト結果、欠陥報告", "リリースノートのみ", "運用マニュアルのみ"], "answer": 1, "explain": "計画・設計・実行・記録・報告の成果物が必要。"}, {"id": 7, "topic": "テストの基礎", "stem": "テストの独立性が一般に高まる順として最も適切なのはどれか。", "options": ["開発者自身→他開発者→独立テストチーム→外部監査", "外部監査→独立テストチーム→他開発者→開発者自身", "独立テストチーム→開発者自身→他開発者→外部監査", "他開発者→開発者自身→外部監査→独立テストチーム"], "answer": 0, "explain": "同一人物より別人、同一チームより独立チーム、さらに外部が最も独立性が高い。"}, {"id": 8, "topic": "テストの基礎", "stem": "次のうち『テストは状況依存』を最もよく表す例はどれか。", "options": ["同じテストケースを全製品に流用する", "安全要求が高い製品ではより厳格なテストが求められる", "テストは常に同一手順で実施すべき", "すべてのプロジェクトで同じカバレッジ目標を採用する"], "answer": 1, "explain": "ドメイン・リスク・規制により最適なテストは変わる。"}, {"id": 9, "topic": "SDLCとテスト", "stem": "コンポーネントテスト（単体テスト）の主な目的として最も適切なのはどれか。", "options": ["ビジネスプロセスの適合性を確認する", "個々のコンポーネントの機能/非機能と内部構造の欠陥を検出する", "システム全体のエンドツーエンドを確認する", "運用手順の妥当性を確認する"], "answer": 1, "explain": "単体はコンポーネント単位。システム/受入とは焦点が異なる。"}, {"id": 10, "topic": "SDLCとテスト", "stem": "統合テストで特に検出しやすい欠陥はどれか。", "options": ["要件の誤り", "インタフェース不整合やデータ受け渡し誤り", "UIの文言ミス", "運用手順書の不足"], "answer": 1, "explain": "統合では結合点・通信・呼出し順序・エラーハンドリングなどが焦点。"}, {"id": 11, "topic": "SDLCとテスト", "stem": "受入テストの主な目的として最も適切なのはどれか。", "options": ["コード網羅率を最大化する", "システムが利用者/業務ニーズを満たすか評価する", "モジュール間インタフェースを検証する", "回帰テストを自動化する"], "answer": 1, "explain": "受入は利用者視点の妥当性確認（ビジネス価値、契約/規制、運用適合など）。"}, {"id": 12, "topic": "SDLCとテスト", "stem": "機能テストと非機能テストの関係として正しいものはどれか。", "options": ["非機能テストは機能テストの一部である", "機能テストは非機能テストの一部である", "どちらもテストタイプであり、焦点が異なる", "どちらもテストレベルである"], "answer": 2, "explain": "テストタイプ。機能=何をするか、非機能=どの程度うまくするか(性能/使いやすさ等)。"}, {"id": 13, "topic": "SDLCとテスト", "stem": "回帰テストの目的として最も適切なのはどれか。", "options": ["既知の欠陥を再現する", "変更による意図しない影響を検出する", "新機能の全探索を行う", "テストデータを増やす"], "answer": 1, "explain": "修正や変更の副作用を検出するために既存テストを再実行する。"}, {"id": 14, "topic": "SDLCとテスト", "stem": "確認テスト（re-testing / confirmation testing）の説明として最も適切なのはどれか。", "options": ["変更の影響範囲を広く確認する", "欠陥修正が当該欠陥を解消したことを確認する", "性能目標を満たすか評価する", "未テスト領域を探索する"], "answer": 1, "explain": "修正した欠陥が『直った』ことを確認。回帰は『他が壊れてない』確認。"}, {"id": 15, "topic": "SDLCとテスト", "stem": "シフトレフト（Shift-left）の具体例として最も適切なのはどれか。", "options": ["運用開始後に探索的テストをする", "要件レビューで曖昧さや矛盾を検出する", "システムテストを最初に実施する", "受入テストだけを実施する"], "answer": 1, "explain": "上流（左側）で品質活動（レビュー、静的解析、早期テスト設計）を行う。"}, {"id": 16, "topic": "静的テスト", "stem": "静的テスト（レビュー/静的解析）の利点として最も適切なのはどれか。", "options": ["実行環境が必須である", "欠陥を早期に低コストで検出できる", "欠陥は検出できない", "テストデータ生成が不要になる"], "answer": 1, "explain": "実行せずに成果物を評価できるため早期検出・修正コスト低減が期待できる。"}, {"id": 17, "topic": "静的テスト", "stem": "インスペクションにおいて、会議の進行を管理しプロセス遵守を支援する役割はどれか。", "options": ["作成者（author）", "モデレータ（moderator）", "記録者（scribe）", "レビュア（reviewer）"], "answer": 1, "explain": "モデレータが運営・手順・時間管理などを担う。"}, {"id": 18, "topic": "静的テスト", "stem": "ウォークスルーの特徴として最も適切なのはどれか。", "options": ["正式な入口/出口基準が必須", "作成者主導で内容を説明し参加者と議論する", "欠陥数の計測が主目的", "常に外部監査人が主導する"], "answer": 1, "explain": "ウォークスルーは比較的非公式で作成者主導。インスペクションはより形式的。"}, {"id": 19, "topic": "静的テスト", "stem": "静的解析ツールが検出しやすい問題として最も適切なのはどれか。", "options": ["要求の不足", "未使用変数や到達不能コード", "業務フローの不整合", "ユーザ満足度の低下"], "answer": 1, "explain": "コーディング規約違反、複雑度、未初期化、潜在欠陥などを検出しやすい。"}, {"id": 20, "topic": "テスト技法", "stem": "同値クラス分割の目的として最も適切なのはどれか。", "options": ["分岐数を最小化する", "入力領域を同等に扱えるクラスに分け代表値で効率化する", "全パスを実行する", "欠陥の優先度を決める"], "answer": 1, "explain": "同じ振る舞いが期待される入力集合をまとめ代表値でテスト数を減らす。"}, {"id": 21, "topic": "テスト技法", "stem": "境界値分析で選ぶ値として最も適切なのはどれか。", "options": ["範囲の中央値のみ", "境界の内側/境界/境界の外側", "ランダム値のみ", "最大値のみ"], "answer": 1, "explain": "境界付近で欠陥が起きやすい。内側/境界/外側を考慮する。"}, {"id": 22, "topic": "テスト技法", "stem": "デシジョンテーブルが特に有効な場面として最も適切なのはどれか。", "options": ["単一入力の境界値", "条件の組合せによって結果が変わるルール", "UIの配色", "メモリリーク検出"], "answer": 1, "explain": "複数条件の組合せによるビジネスルールを整理し漏れを減らす。"}, {"id": 23, "topic": "テスト技法", "stem": "状態遷移テストで最も重視する観点はどれか。", "options": ["入力値の境界", "状態と遷移（イベント）に基づく振る舞い", "コードの分岐網羅", "性能のスループット"], "answer": 1, "explain": "状態・イベント・遷移・遷移表/図に基づき有効/無効遷移を確認する。"}, {"id": 24, "topic": "テスト技法", "stem": "ステートメントカバレッジ100%を達成するために必要な条件として最も適切なのはどれか。", "options": ["すべての分岐の真偽を実行する", "すべての実行可能文を少なくとも1回実行する", "すべての条件の独立性を満たす", "すべてのパスを実行する"], "answer": 1, "explain": "ステートメント=文の実行有無。分岐や条件の真偽まで保証しない。"}, {"id": 25, "topic": "テスト技法", "stem": "ブランチカバレッジ100%の説明として最も適切なのはどれか。", "options": ["各条件の真偽をそれぞれ1回以上実行", "各分岐の結果（真/偽）をそれぞれ1回以上実行", "全てのパスを実行", "全ての文を実行"], "answer": 1, "explain": "if/else等の分岐結果を両方通す。条件カバレッジとは異なる。"}, {"id": 26, "topic": "テスト技法", "stem": "経験ベースのテスト技法に含まれるものとして最も適切なのはどれか。", "options": ["同値クラス分割", "境界値分析", "エラー推測", "ステートメントカバレッジ"], "answer": 2, "explain": "エラー推測・探索的テスト・チェックリストは経験ベース。"}, {"id": 27, "topic": "テスト技法", "stem": "探索的テストの特徴として最も適切なのはどれか。", "options": ["テスト設計と実行を厳密に分離する", "学習しながら同時並行で設計・実行・評価する", "必ず詳細な事前手順書が必要", "回帰テストのみを対象にする"], "answer": 1, "explain": "探索的テストは適応的に学習しながら進める。"}, {"id": 28, "topic": "テスト技法", "stem": "次のうちホワイトボックス技法に該当するものはどれか。", "options": ["デシジョンテーブル", "状態遷移テスト", "ブランチカバレッジ", "ユースケーステスト"], "answer": 2, "explain": "内部構造に基づく網羅（文/分岐/条件など）がホワイトボックス。"}, {"id": 29, "topic": "テスト管理", "stem": "リスクベースドテスト（RBT）で一般に行う活動として最も適切なのはどれか。", "options": ["リスクの分析結果に基づきテスト優先度と深さを決める", "全テストケースを同一優先度にする", "欠陥をすべて重大扱いにする", "テストを最後に一括で実施する"], "answer": 0, "explain": "リスク（影響×確率等）に基づき重点領域を決め、資源配分を行う。"}, {"id": 30, "topic": "テスト管理", "stem": "テスト計画に含める内容として最も適切なのはどれか。", "options": ["個々のテストケースの詳細手順のみ", "目的、範囲、アプローチ、資源、スケジュール、リスク、入口/出口基準など", "ソースコードの全行", "ユーザ要望の全履歴"], "answer": 1, "explain": "計画は管理レベルの合意文書。詳細ケースは設計成果物。"}, {"id": 31, "topic": "テスト管理", "stem": "出口基準（exit criteria）の例として最も適切なのはどれか。", "options": ["テスト環境が準備できた", "テスト設計が完了した", "合意したカバレッジ達成と重大欠陥が所定以下", "開発者が実装を終えた"], "answer": 2, "explain": "終了判断の基準（品質/進捗/欠陥状況など）。"}, {"id": 32, "topic": "テスト管理", "stem": "見積りに関して最も適切なのはどれか。", "options": ["見積りは常に正確でなければならない", "見積りは不確実性を含むため前提と範囲を明確にする", "見積りは不要である", "見積りはテスト完了後に行う"], "answer": 1, "explain": "不確実性を扱うため、前提・リスク・バッファ・根拠を明確化する。"}, {"id": 33, "topic": "テスト管理", "stem": "構成管理の主な目的として最も適切なのはどれか。", "options": ["欠陥の優先度を決める", "成果物の版・変更履歴・ベースラインを管理する", "テスト自動化を必須にする", "テストタイプを決める"], "answer": 1, "explain": "何をどの版でテストしたか、差分、承認済みベースライン等を追跡可能にする。"}, {"id": 34, "topic": "テスト管理", "stem": "トレーサビリティの利点として最も適切なのはどれか。", "options": ["テストを不要にする", "要求↔テスト↔欠陥の関係を追跡し、影響分析や網羅の根拠を得る", "性能を必ず向上させる", "コードレビューの回数を減らす"], "answer": 1, "explain": "要求漏れ/未テスト/未修正などの可視化と影響分析に有効。"}, {"id": 35, "topic": "テストツール", "stem": "テスト実行ツール（自動実行）の導入で最も注意すべき点はどれか。", "options": ["一度作ればメンテナンス不要", "自動化は手動を完全に置き換える", "スクリプトの保守や安定性、適用範囲を考慮する", "自動化すればテスト設計は不要"], "answer": 2, "explain": "自動化にもコスト（作成/保守/失敗解析）がある。適材適所が重要。"}, {"id": 36, "topic": "テストツール", "stem": "テスト管理ツールが一般に支援するものとして最も適切なのはどれか。", "options": ["コンパイル", "テスト計画/進捗/結果/欠陥/要求との紐付け管理", "本番データの暗号化", "ネットワーク帯域制御"], "answer": 1, "explain": "管理・可視化・トレーサビリティ支援が中心。"}, {"id": 37, "topic": "テストツール", "stem": "静的解析ツールの導入目的として最も適切なのはどれか。", "options": ["UXを測定する", "コード品質の問題や潜在欠陥を早期検出する", "要件の承認を自動化する", "テストデータを自動生成する"], "answer": 1, "explain": "未使用/未初期化、複雑度、規約違反などを早期検出し、レビューも補完する。"}, {"id": 38, "topic": "シナリオ", "stem": "【シナリオ】ECサイトの『住所変更』機能に改修が入った。変更点は(1)郵便番号の入力規則が「7桁固定」から「国別可変」に変更、(2)住所候補の自動補完APIの呼び出し先が変更、(3)管理画面で住所変更履歴の表示列が追加。\nこの状況で最も適切なテストアプローチはどれか。", "options": ["新機能なので回帰テストは不要、確認テストのみ", "(1)(2)(3)の変更点を中心に確認テストを行い、影響範囲に対して回帰テストを計画する", "管理画面のみテストし、購入フローは不要", "単体テストだけで十分"], "answer": 1, "explain": "変更点の確認に加え、周辺（配送/課税/不正検知等）への影響を回帰で抑えるのが妥当。"}, {"id": 39, "topic": "シナリオ", "stem": "【シナリオ】ある仕様書に『パスワードは8文字以上』と『パスワードは6文字以上』の記述が混在している。最初に行うべき最も適切な活動はどれか。", "options": ["実装が正しい方に合わせる", "テストで両方許容するケースを作る", "レビュー/質問により曖昧さ・矛盾を解消する", "システムテストまで待つ"], "answer": 2, "explain": "矛盾は上流で解消（静的テスト/レビュー/問い合わせ）。後工程に持ち込まない。"}, {"id": 40, "topic": "シナリオ", "stem": "【シナリオ】プロジェクトで『ブランチカバレッジ100%達成』が出口基準にある。あるモジュールは例外処理分岐があり、例外は『外部I/O障害時のみ』発生する。最も適切な判断はどれか。", "options": ["例外分岐は現実的でなくても無視して100%達成とみなす", "外部I/O障害を模擬（スタブ/モック/故障注入）して例外分岐も実行する方法を検討する", "出口基準を守らずリリースする", "例外処理分岐を削除する"], "answer": 1, "explain": "実運用で起こり得るなら模擬してテストする。達成不能なら基準見直し提案もあるが、まず実現策を検討。"}];
+let order = QUESTIONS.map(q=>q.id);
+let submitted = false;
+
+function el(tag, cls, html) {
+  const e=document.createElement(tag);
+  if(cls) e.className=cls;
+  if(html!==undefined) e.innerHTML=html;
+  return e;
+}
+
+function escapeHtml(s){
+  return String(s)
+    .replaceAll('&','&amp;')
+    .replaceAll('<','&lt;')
+    .replaceAll('>','&gt;')
+    .replaceAll('"','&quot;');
+}
+
+function render() {
+  const list=document.getElementById('list');
+  list.innerHTML='';
+  const map = new Map(QUESTIONS.map(q=>[q.id,q]));
+  order.forEach((id, idx) => {
+    const q = map.get(id);
+    const card = el('div','card');
+    card.dataset.qid = q.id;
+    const head = el('div','qhead');
+    head.appendChild(el('div','qnum',`Q${idx+1}`));
+    head.appendChild(el('div','topic',q.topic));
+    card.appendChild(head);
+    card.appendChild(el('div','stem',escapeHtml(q.stem)));
+
+    const opts = el('div','opts');
+    q.options.forEach((txt,i)=>{
+      const lab = el('label','opt');
+      const inp = document.createElement('input');
+      inp.type='radio';
+      inp.name='q_'+q.id;
+      inp.value=i;
+      inp.disabled=submitted;
+      inp.addEventListener('change', updateAnswered);
+      const span = el('div','',escapeHtml(txt));
+      lab.appendChild(inp);
+      lab.appendChild(span);
+      opts.appendChild(lab);
+    });
+    card.appendChild(opts);
+
+    const ex = el('div','explain');
+    ex.style.display='none';
+    ex.innerHTML = `<hr><b>解説：</b>${escapeHtml(q.explain)}`;
+    card.appendChild(ex);
+
+    list.appendChild(card);
+  });
+  updateAnswered();
+  if(submitted) showResults();
+}
+
+function getSelected(qid){
+  const el = document.querySelector(`input[name="q_${qid}"]:checked`);
+  return el ? Number(el.value) : null;
+}
+
+function updateAnswered(){
+  let ans=0;
+  order.forEach(id=>{ if(getSelected(id)!==null) ans++; });
+  document.getElementById('kAnswered').textContent = `回答: ${ans}/40`;
+}
+
+function score(){
+  let correct=0;
+  order.forEach(id=>{
+    const q = QUESTIONS.find(x=>x.id===id);
+    const sel = getSelected(id);
+    if(sel===q.answer) correct++;
+  });
+  return correct;
+}
+
+function showResults(){
+  const total = QUESTIONS.length;
+  const s = score();
+  document.getElementById('kScore').textContent = `得点: ${s}/${total}`;
+  document.getElementById('status').textContent = `提出済（${s}/${total}）`;
+
+  order.forEach(id=>{
+    const q = QUESTIONS.find(x=>x.id===id);
+    const card = document.querySelector(`.card[data-qid="${id}"]`);
+    const sel = getSelected(id);
+    const opts = card.querySelectorAll('.opt');
+    opts.forEach((lab,i)=>{
+      lab.classList.remove('correct','wrong');
+      if(i===q.answer) lab.classList.add('correct');
+      if(sel!==null && i===sel && sel!==q.answer) lab.classList.add('wrong');
+    });
+    card.querySelectorAll('.explain').forEach(e=>e.style.display='block');
+  });
+}
+
+document.getElementById('btnSubmit').addEventListener('click', ()=>{
+  if(submitted) return;
+  submitted = true;
+  document.querySelectorAll('input[type="radio"]').forEach(i=>i.disabled=true);
+  showResults();
+});
+
+document.getElementById('btnReset').addEventListener('click', ()=>{
+  submitted = false;
+  document.getElementById('status').textContent='未提出';
+  document.getElementById('kScore').textContent='得点: -';
+  document.querySelectorAll('input[type="radio"]').forEach(i=>{ i.checked=false; i.disabled=false; });
+  document.querySelectorAll('.opt').forEach(l=>l.classList.remove('correct','wrong'));
+  document.querySelectorAll('.explain').forEach(e=>e.style.display='none');
+  updateAnswered();
+});
+
+document.getElementById('btnShuffle').addEventListener('click', ()=>{
+  if(submitted) return;
+  for(let i=order.length-1;i>0;i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  render();
+});
+
+render();
+</script>
+</body>
+</html>
